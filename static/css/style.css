@@ -15,5 +15,13 @@ body {
 }
 
 .ui.form.commands {
-	width: 80%;
+	width: 100%;
+}
+
+.ui.huge.button {
+	margin-top: 30%;
+}
+
+.ui.message {
+	width: 100%;
 }

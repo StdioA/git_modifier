@@ -1,11 +1,11 @@
 # coding: utf-8
 
-# 只在Session里面记录repo的地址就行了！每次需要调用的时候重建Repo对象
 import os
 import time
-from flask import Flask, render_template, jsonify, request, session
-from git_modify import RepoModifier, generate_command
 import json
+from flask import Flask, render_template, jsonify, request, session
+import git
+from git_modify import RepoModifier, generate_command
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = ";'AAN12#('S09KS[.:PQ9U0S'/2WEL"
@@ -27,27 +27,40 @@ def index():
 def get_commits():
     address = request.form["address"]
     session["address"] = address
-    repo = RepoModifier(address)
-    commits = repo.get_commits()
-
-    data = {
-        "success": True,
-        "commits": []
-    }
-
-    for commit in commits:
-        date,  time = make_time_str(commit.authored_date)
-        commit_data = {
-            "sha": commit.hexsha,
-            "message": commit.message.split("\n")[0],
-            "author": commit.author.name,
-            "email": commit.author.email,
-            "date": date,
-            "time": time,
+    try:
+        repo = RepoModifier(address)
+    except git.InvalidGitRepositoryError:
+        data = {
+            "success": False,
+            "error": "Invalid git repository."
         }
-        data["commits"].append(commit_data)
-    session["commits_old"] = data["commits"]
-    return jsonify(data)
+    except git.NoSuchPathError:
+        data = {
+            "success": False,
+            "error": "No such path."
+        }
+    else:
+        commits = repo.get_commits()
+
+        data = {
+            "success": True,
+            "commits": []
+        }
+
+        for commit in commits:
+            date,  time = make_time_str(commit.authored_date)
+            commit_data = {
+                "sha": commit.hexsha,
+                "message": commit.message.split("\n")[0],
+                "author": commit.author.name,
+                "email": commit.author.email,
+                "date": date,
+                "time": time,
+            }
+            data["commits"].append(commit_data)
+        session["commits_old"] = data["commits"]
+    finally:
+        return jsonify(data)
 
 @app.route("/get_command", methods=["POST"])
 def get_command():

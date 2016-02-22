@@ -34,7 +34,8 @@ class RepoModifier(object):
         try:
             self.repo = git.Repo(repo_path)
         except git.InvalidGitRepositoryError:
-            print "Not a valid git repo:", repo_path
+            # print "Not a valid git repo:", repo_path
+            raise
 
     def make_time_stamp(cls, time_str):
         """\

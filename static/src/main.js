@@ -9,6 +9,7 @@ var CommitForm = React.createClass({
 		var commits = this.state.commits;
 
 		var key_reg = /.*\$(\d+)\.\d+.(\d)\.0/;
+		var time_reg = /^(\d|[0-1]\d|2[0-3]):(\d|[0-5]\d):(\d|[0-5]\d)$/;
 		var ids = key_reg.exec(event.dispatchMarker),
 			commit_id = parseInt(ids[1]),
 			field_id = parseInt(ids[2]);
@@ -24,6 +25,12 @@ var CommitForm = React.createClass({
 		}
 		else if (field_id == 5) {
 			commits[commit_id].time = event.target.value;
+			if(time_reg.test(event.target.value)) {
+				$(event.target).parent().removeClass("error");
+			}
+			else {
+				$(event.target).parent().addClass("error");
+			}
 		}
 		this.setState({commits: commits});
 
@@ -54,10 +61,18 @@ var CommitForm = React.createClass({
 		}
 	},
 	render: function () {
+		// 若props改变，则刷新state数据(通过第一个commit的SHA来判断)
+		if(this.state.commits[0].sha != this.props.commits[0].sha) {
+			this.setState({
+				commits: this.props.commits,
+				commands: ""
+			});
+		}
+
 		var command_input = null;
 		if(this.state.command) {
 			command_input = (
-					<div className="ten wide row">
+					<div className="ten wide column">
 						<div className="ui form commands">
 							<div className="field">
 								<label>Command</label>
@@ -68,35 +83,36 @@ var CommitForm = React.createClass({
 				);
 		}
 		return (
+			<div className="ui container">
 			<div className="ui center aligned grid" >
-				<div className="sixteen wide column">
-					<div className="ui form">
-						<div className="field">
-							<div className="three fields">
-								<div className="two wide disabled field">
-									<label>SHA</label>
-								</div>
-								<div className="four wide disabled field">
-									<label>Message</label>
-								</div>
-								<div className="two wide field">
-									<label>Author</label>
-								</div>
-								<div className="three wide field">
-									<label>Email</label>
-								</div>
-								<div className="three wide field">
-									<label>Date</label>
-								</div>
-								<div className="two wide field">
-									<label>Time</label>
+				<div className="ui row">
+					<div className="sixteen wide column">
+						<div className="ui form">
+							<div className="field">
+								<div className="three fields">
+									<div className="two wide disabled field">
+										<label>SHA</label>
+									</div>
+									<div className="four wide disabled field">
+										<label>Message</label>
+									</div>
+									<div className="two wide field">
+										<label>Author</label>
+									</div>
+									<div className="three wide field">
+										<label>Email</label>
+									</div>
+									<div className="three wide field">
+										<label>Date</label>
+									</div>
+									<div className="two wide field">
+										<label>Time</label>
+									</div>
 								</div>
 							</div>
-						</div>
-						{
-							this.state.commits.map(function (commit, index) {
-								return (
-									<div className="sixteen wide column" key={index}>
+							{
+								this.state.commits.map(function (commit, index) {
+									return (
 										<div className="field" key={index}>
 											<div className="three fields">
 												<div className="two wide disabled field">
@@ -131,21 +147,25 @@ var CommitForm = React.createClass({
 												</div>
 											</div>
 										</div>
-									</div>
-								);
-							}, this)
-						}
+									);
+								}, this)
+							}
+						</div>
 					</div>
 				</div>
-				{command_input}
-				<div className="ten wide row">
-					<button className="ui huge green button" 
-							onClick={this.doneClick}
-							id={this.state.command==""?"edit":"run"}>
-						{this.state.command==""?"Done":"Run"}
-					</button>
+			</div>
+			<div className="sixteen wide row">
+				<div className="ui center aligned stackable grid">
+					{command_input}
+					<div className="three wide center aligned column">
+						<button className="ui huge green button" 
+								onClick={this.doneClick}
+								id={this.state.command==""?"edit":"run"}>
+							{this.state.command==""?"Done":"Run"}
+						</button>
+					</div>
 				</div>
-				
+			</div>
 			</div>
 		);
 	}
@@ -162,11 +182,19 @@ $("#modify").on("click", function () {
 					document.getElementById("commits")
 				);
 			}
+			else {
+				ReactDOM.render(
+					<div className="ui twelve wide column">
+						<div className="ui red message">
+							{data.error}
+						</div>
+					</div>,
+					document.getElementById("commits")
+				);
+				$('.message .close').on('click', function() {
+					$(this).closest('.message').transition('fade');
+				});
+			}
 		});
 	
 })
-
-// ReactDOM.render(
-// 	<CommitForm />,
-// 	document.getElementById("commits")
-// );
