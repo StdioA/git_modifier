@@ -9,12 +9,16 @@ Requirements:
 > GitPython==1.0.2  
 > Flask==0.10.1
 
-## How to use:
+## How to use
 
 1. Install all the python dependencies via `pip`
 2. `python main.py`, run the flask app (You have to run the app **locally**)
 3. Copy the path of the git repo that you want to modified
 4. Do what the picture above does.
+
+## How to modify
+
+Run `npm run build` to transform `static/src/main.js` from babel to javascript offline. The transformed script file is placed in `static/build/main.js`. See [here](https://facebook.github.io/react/docs/getting-started.html#using-react-from-npm) for more information.
 
 ## 吐槽
 修改repo的作者和时间信息​，真是个奇怪的需求:joy:​
