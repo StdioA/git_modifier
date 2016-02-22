@@ -1,0 +1,25 @@
+{
+  "name": "git_modifier",
+  "version": "1.0.0",
+  "description": "Modify commit author and commit date information of a git repo using `GitPython`.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/StdioA/git_modifier.git"
+  },
+  "author": "Stdio A",
+  "license": "WTFPL",
+  "bugs": {
+    "url": "https://github.com/StdioA/git_modifier/issues"
+  },
+  "homepage": "https://github.com/StdioA/git_modifier#readme",
+  "dependencies": {
+    "babel-preset-react": "^6.5.0",
+    "babelify": "^7.2.0",
+    "react": "^0.14.7",
+    "react-dom": "^0.14.7"
+  }
+}
