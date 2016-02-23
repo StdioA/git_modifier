@@ -5,6 +5,12 @@ var CommitForm = React.createClass({
 			command: "", 
 		};
 	},
+	componentWillReceiveProps: function (nextProps) {
+		this.setState({
+			commits: nextProps.commits, 
+			command: ""
+		});
+	},
 	inputChange: function (event) {
 		var commits = this.state.commits;
 
@@ -56,20 +62,14 @@ var CommitForm = React.createClass({
 				$(e).addClass("green");
 				$(e).text("Success!");
 				setTimeout(function () {
+					$("#modify").click();
 					$(e).text("Run");
 				}, 1000);
 			});
 		}
 	},
-	render: function () {
-		// 若props改变，则刷新state数据(通过第一个commit的SHA来判断)
-		if(this.state.commits[0].sha != this.props.commits[0].sha) {
-			this.setState({
-				commits: this.props.commits,
-				command: ""
-			});
-		}
 
+	render: function () {
 		var command_input = null,
 			regen_button = null;
 		if(this.state.command) {
