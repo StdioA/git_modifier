@@ -25,7 +25,7 @@ def index():
 
 @app.route("/get_commits", methods=["POST"])
 def get_commits():
-    address = request.form["address"]
+    address = request.form["address"].encode("gbk")
     session["address"] = address
     try:
         repo = RepoModifier(address)
@@ -48,7 +48,7 @@ def get_commits():
         }
 
         for commit in commits:
-            date,  time = make_time_str(commit.authored_date)
+            date, time = make_time_str(commit.authored_date)
             commit_data = {
                 "sha": commit.hexsha,
                 "message": commit.message.split("\n")[0],

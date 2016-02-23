@@ -100,7 +100,7 @@ class RepoModifier(object):
                 if commit_time:
                     params["commit_time"] = "'%s'"%commit_time
                 else:
-                    params["commit_time"] = "\"\\$GIT_COMITTER_DATE\""
+                    params["commit_time"] = "\"\\$GIT_COMMITTER_DATE\""
 
                 if commit_name:
                     params["commit_name"] = "'%s'"%commit_name
@@ -165,7 +165,7 @@ def generate_command(repo_path, old_commits, new_commits):
             if commit_time:
                 params["commit_time"] = "'%s'"%new_commit["commit_time"]
             else:
-                params["commit_time"] = "\"\\$GIT_COMITTER_DATE\""
+                params["commit_time"] = "\"\\$GIT_COMMITTER_DATE\""
 
             if commit_name:
                 params["commit_name"] = "'%s'"%new_commit["author"]

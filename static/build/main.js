@@ -34,15 +34,13 @@ var CommitForm = React.createClass({
 		this.setState({ commits: commits });
 	},
 	doneClick: function (event) {
-		if (event.target.id == "edit") {
-			if (this.state.command == "") {
-				var that = this;
-				$.post("/get_command", { commits: JSON.stringify(this.state.commits) }, function (data, status) {
-					that.setState({
-						command: data.command
-					});
+		if (event.target.id == "edit" || event.target.id == "regen") {
+			var that = this;
+			$.post("/get_command", { commits: JSON.stringify(this.state.commits) }, function (data, status) {
+				that.setState({
+					command: data.command
 				});
-			}
+			});
 		} else if (event.target.id == "run") {
 			var e = event.target;
 			$(e).removeClass("green");
@@ -52,6 +50,9 @@ var CommitForm = React.createClass({
 				$(e).removeClass("loading");
 				$(e).addClass("green");
 				$(e).text("Success!");
+				setTimeout(function () {
+					$(e).text("Run");
+				}, 1000);
 			});
 		}
 	},
@@ -60,11 +61,12 @@ var CommitForm = React.createClass({
 		if (this.state.commits[0].sha != this.props.commits[0].sha) {
 			this.setState({
 				commits: this.props.commits,
-				commands: ""
+				command: ""
 			});
 		}
 
-		var command_input = null;
+		var command_input = null,
+		    regen_button = null;
 		if (this.state.command) {
 			command_input = React.createElement(
 				"div",
@@ -82,6 +84,17 @@ var CommitForm = React.createClass({
 						),
 						React.createElement("textarea", { value: this.state.command, readOnly: true })
 					)
+				)
+			);
+			regen_button = React.createElement(
+				"div",
+				{ className: "row" },
+				React.createElement(
+					"button",
+					{ className: "ui huge blue button",
+						onClick: this.doneClick,
+						id: "regen" },
+					"Re-generate command"
 				)
 			);
 		}
@@ -228,12 +241,17 @@ var CommitForm = React.createClass({
 					React.createElement(
 						"div",
 						{ className: "three wide center aligned column" },
+						regen_button,
 						React.createElement(
-							"button",
-							{ className: "ui huge green button",
-								onClick: this.doneClick,
-								id: this.state.command == "" ? "edit" : "run" },
-							this.state.command == "" ? "Done" : "Run"
+							"div",
+							{ className: "row" },
+							React.createElement(
+								"button",
+								{ className: "ui huge green button",
+									onClick: this.doneClick,
+									id: this.state.command == "" ? "edit" : "run" },
+								this.state.command == "" ? "Done" : "Run"
+							)
 						)
 					)
 				)
