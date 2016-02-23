@@ -7,6 +7,7 @@ Modify commit author and commit date information of a git repo using `GitPython`
 Requirements:
 
 > GitPython==1.0.2  
+> 
 > Flask==0.10.1
 
 ## How to use
@@ -16,11 +17,12 @@ Requirements:
 3. Copy the path of the git repo that you want to modified
 4. Do what the picture above does.
 
-## How to modify
+## How to modify the front end scripts
 
-Run `npm run build` to transform `static/src/main.js` from babel to javascript offline. The transformed script file is placed in `static/build/main.js`. See [here](https://facebook.github.io/react/docs/getting-started.html#using-react-from-npm) for more information.
+Run `gulp build` to transform `static/src/main.js` from babel to javascript offline and compress it. The transformed script file is placed in `static/build`. See [here](https://facebook.github.io/react/docs/getting-started.html#using-react-from-npm) and the [gulpfile](./gulpfile.js) for more information.
 
 ## 吐槽
+
 修改repo的作者和时间信息​，真是个奇怪的需求:joy:​
 
 具体细节：
