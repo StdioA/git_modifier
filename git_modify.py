@@ -5,28 +5,29 @@ import time
 import shutil
 import git
 
-edit_command = """\
-cd {path}
-rm -rf "$(git rev-parse --git-dir)/refs/original/"
-
-git filter-branch --env-filter \\
-\"
-    {commands}
-\"
-"""
-
-time_command = """
-if [ \\$GIT_COMMIT = \"{commit_sha}\" ]; then
-     export GIT_AUTHOR_DATE={commit_time}
-     export GIT_COMMITTER_DATE={commit_time}
-     export GIT_AUTHOR_NAME={commit_name}
-     export GIT_AUTHOR_EMAIL={commit_email}
-     export GIT_COMMITTER_NAME=\\$GIT_AUTHOR_NAME
-     export GIT_COMMITTER_EMAIL=\\$GIT_AUTHOR_EMAIL
-fi
-"""
 
 class RepoModifier(object):
+    edit_command = """\
+    cd {path}
+    rm -rf "$(git rev-parse --git-dir)/refs/original/"
+
+    git filter-branch --env-filter \\
+    \"
+        {commands}
+    \"
+    """
+
+    time_command = """
+    if [ \\$GIT_COMMIT = \"{commit_sha}\" ]; then
+         export GIT_AUTHOR_DATE={commit_time}
+         export GIT_COMMITTER_DATE={commit_time}
+         export GIT_AUTHOR_NAME={commit_name}
+         export GIT_AUTHOR_EMAIL={commit_email}
+         export GIT_COMMITTER_NAME=\\$GIT_AUTHOR_NAME
+         export GIT_COMMITTER_EMAIL=\\$GIT_AUTHOR_EMAIL
+    fi
+    """
+
     def __init__(self, repo_path):
         self.repo_path = repo_path
         self.command_list = []
@@ -37,21 +38,73 @@ class RepoModifier(object):
             # print "Not a valid git repo:", repo_path
             raise
 
-    def make_time_stamp(cls, time_str):
+    @staticmethod
+    def make_time_stamp(time_str, dash=False):
         """\
         getTime('2016/01/27 23:12:18') -> 1453907538
         """
-        time_array = time.strptime(time_str, "%Y/%m/%d %H:%M:%S")
+        if dash:
+            time_array = time.strptime(time_str, "%Y-%m-%d %H:%M:%S")
+        else:
+            time_array = time.strptime(time_str, "%Y/%m/%d %H:%M:%S")
         time_stamp = int(time.mktime(time_array))
         return time_stamp
 
-    def make_time_str(cls, time_stamp):
+    @staticmethod
+    def make_time_str(time_stamp):
         """\
         getTime(1453907538) -> '2016/01/27 23:12:18'
         """
         time_array = time.localtime(time_stamp)
         time_str = time.strftime("%Y/%m/%d %H:%M:%S", time_array)
         return time_str
+
+    @classmethod
+    def generate_command(cls, repo_path, old_commits, new_commits):
+
+        command_list = []
+        for index, old_commit in enumerate(old_commits):
+            params = {
+                    "commit_sha": old_commit["sha"]
+                }
+            
+            new_commit = new_commits[index]
+
+            old_commit["commit_time_str"] = " ".join([old_commit["date"], old_commit["time"]])
+            new_commit["commit_time_str"] = " ".join([new_commit["date"], new_commit["time"]])
+            old_commit["commit_time"] = cls.make_time_stamp(old_commit["commit_time_str"],
+                                                            dash=True)
+            new_commit["commit_time"] = cls.make_time_stamp(new_commit["commit_time_str"],
+                                                            dash=True)
+
+            commit_time = (old_commit["commit_time"] != new_commit["commit_time"])
+            commit_name = (old_commit["author"] != new_commit["author"])
+            commit_email = (old_commit["email"] != new_commit["email"])
+
+            if commit_time or commit_name or commit_email:
+                if commit_time:
+                    params["commit_time"] = "'%s'"%new_commit["commit_time"]
+                else:
+                    params["commit_time"] = "\"\\$GIT_COMMITTER_DATE\""
+
+                if commit_name:
+                    params["commit_name"] = "'%s'"%new_commit["author"]
+                else:
+                    params["commit_name"] = "\"\\$GIT_AUTHOR_NAME\""
+
+                if commit_email:
+                    params["commit_email"] = "'%s'"%new_commit["email"]
+                else:
+                    params["commit_email"] = "\"\\$GIT_AUTHOR_EMAIL\""
+
+                command_list.append(cls.time_command.format(**params))
+
+        command = cls.edit_command.format(
+                path=repo_path.replace("\\", "\\\\"),
+                commands="".join(command_list))
+
+        return command
+
 
     def get_commits(self, commit_name=""):
         """\
@@ -114,17 +167,11 @@ class RepoModifier(object):
 
                 self.command_list.append(time_command.format(**params))
 
-        self.generate_command()
-        return self.command
-
-    def generate_command(self):
-        """\
-        Generate the edit shell script from the current commands list.
-        """
-
         self.command = edit_command.format(
                 path=self.repo_path.replace("\\", "\\\\"),
                 commands="".join(self.command_list))
+
+        return self.command
 
     def run(self):
         """\
@@ -137,58 +184,6 @@ class RepoModifier(object):
         os.system("sh modify_time.sh")
         os.remove("./modify_time.sh")
 
-def _generate_time_stamp(time_str):
-    time_array = time.strptime(time_str, "%Y-%m-%d %H:%M:%S")
-    time_stamp = int(time.mktime(time_array))
-    return time_stamp
-
-def generate_command(repo_path, old_commits, new_commits):
-
-    command_list = []
-    for index, old_commit in enumerate(old_commits):
-        params = {
-                "commit_sha": old_commit["sha"]
-            }
-        
-        new_commit = new_commits[index]
-
-        old_commit["commit_time_str"] = " ".join([old_commit["date"], old_commit["time"]])
-        new_commit["commit_time_str"] = " ".join([new_commit["date"], new_commit["time"]])
-        old_commit["commit_time"] = _generate_time_stamp(old_commit["commit_time_str"])
-        new_commit["commit_time"] = _generate_time_stamp(new_commit["commit_time_str"])
-
-        commit_time = (old_commit["commit_time"] != new_commit["commit_time"])
-        commit_name = (old_commit["author"] != new_commit["author"])
-        commit_email = (old_commit["email"] != new_commit["email"])
-
-        if commit_time or commit_name or commit_email:
-            if commit_time:
-                params["commit_time"] = "'%s'"%new_commit["commit_time"]
-            else:
-                params["commit_time"] = "\"\\$GIT_COMMITTER_DATE\""
-
-            if commit_name:
-                params["commit_name"] = "'%s'"%new_commit["author"]
-            else:
-                params["commit_name"] = "\"\\$GIT_AUTHOR_NAME\""
-
-            if commit_email:
-                params["commit_email"] = "'%s'"%new_commit["email"]
-            else:
-                params["commit_email"] = "\"\\$GIT_AUTHOR_EMAIL\""
-
-            command_list.append(time_command.format(**params))
-
-    command = edit_command.format(
-            path=repo_path.replace("\\", "\\\\"),
-            commands="".join(command_list))
-
-    return command
 
 if __name__ == '__main__':
     pass
-    # generate_command(1, 1, 1)
-    # repo_path = raw_input("Git path: ")
-    # repo = RepoModifier(repo_path)
-    # c = repo.console_modify()
-    # repo.run()

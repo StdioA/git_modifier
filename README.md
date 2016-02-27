@@ -31,3 +31,7 @@ Run `gulp build` to transform `static/src/main.js` from babel to javascript offl
 2. 将所有commit显示，由用户决定是否修改、修改哪一项
 3. 将用户选择拼成一个shell脚本
 4. 在本地执行脚本
+
+## License
+
+[ISC](https://opensource.org/licenses/ISC)
