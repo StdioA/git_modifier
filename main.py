@@ -1,5 +1,4 @@
 # coding: utf-8
-
 import os
 import time
 import json
@@ -7,8 +6,10 @@ from flask import Flask, render_template, jsonify, request, session
 import git
 from git_modify import RepoModifier
 
+
 app = Flask(__name__)
 app.config["SECRET_KEY"] = ";'AAN12#('S09KS[.:PQ9U0S'/2WEL"
+
 
 def make_time_str(time_stamp):
     time_array = time.localtime(time_stamp)
@@ -16,16 +17,19 @@ def make_time_str(time_stamp):
     time_str = time.strftime("%H:%M:%S", time_array)
     return date_str, time_str
 
+
 @app.route("/")
 def index():
+    session.clear()
     return render_template("index.html")
 
-@app.route("/get_commits", methods=["POST"])
+
+@app.route("/commits")
 def get_commits():
-    address = request.form["address"].encode("gbk")
-    session["address"] = address
+    path = request.args["path"]
+    session["path"] = path
     try:
-        repo = RepoModifier(address)
+        repo = RepoModifier(path)
     except git.InvalidGitRepositoryError:
         data = {
             "success": False,
@@ -41,6 +45,7 @@ def get_commits():
 
         data = {
             "success": True,
+            "path": path,
             "commits": []
         }
 
@@ -56,26 +61,26 @@ def get_commits():
             }
             data["commits"].append(commit_data)
         session["commits_old"] = data["commits"]
-    finally:
-        return jsonify(data)
 
-@app.route("/get_command", methods=["POST"])
-def get_command():
-    address = session["address"]
-    old_commits = session["commits_old"]
+    return jsonify(data)
+
+
+@app.route("/generate", methods=["POST"])
+def gen_command():
+    path = json.loads(request.form["path"])
+    new_commits = json.loads(request.form["old_commits"])
     new_commits = json.loads(request.form["commits"])
     
-    command = RepoModifier.generate_command(address, old_commits, new_commits)
+    command = RepoModifier.generate_command(path, old_commits, new_commits)
     session["command"] = command
 
-    return jsonify({
-        "command": command
-        })
+    return jsonify({"command": command})
 
-@app.route("/run_command", methods=["POST"])
+
+@app.route("/run", methods=["POST"])
 def run_command():
     command = session["command"]
-    repo_path = session["address"]
+    repo_path = session["path"]
 
     with file("./modify_time.sh", "w") as f:
         f.write(command)
@@ -83,5 +88,6 @@ def run_command():
     os.remove("./modify_time.sh")
 
     return "success!"
+
 
 app.run(debug=True)

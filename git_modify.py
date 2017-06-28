@@ -35,7 +35,6 @@ class RepoModifier(object):
         try:
             self.repo = git.Repo(repo_path)
         except git.InvalidGitRepositoryError:
-            # print "Not a valid git repo:", repo_path
             raise
 
     @staticmethod
@@ -70,12 +69,16 @@ class RepoModifier(object):
             
             new_commit = new_commits[index]
 
-            old_commit["commit_time_str"] = " ".join([old_commit["date"], old_commit["time"]])
-            new_commit["commit_time_str"] = " ".join([new_commit["date"], new_commit["time"]])
-            old_commit["commit_time"] = cls.make_time_stamp(old_commit["commit_time_str"],
-                                                            dash=True)
-            new_commit["commit_time"] = cls.make_time_stamp(new_commit["commit_time_str"],
-                                                            dash=True)
+            old_commit["commit_time_str"] = " ".join([old_commit["date"],
+                                                      old_commit["time"]])
+            new_commit["commit_time_str"] = " ".join([new_commit["date"],
+                                                      new_commit["time"]])
+            old_commit["commit_time"] = cls.make_time_stamp(
+                old_commit["commit_time_str"],
+                dash=True)
+            new_commit["commit_time"] = cls.make_time_stamp(
+                new_commit["commit_time_str"],
+                dash=True)
 
             commit_time = (old_commit["commit_time"] != new_commit["commit_time"])
             commit_name = (old_commit["author"] != new_commit["author"])
@@ -104,7 +107,6 @@ class RepoModifier(object):
                 commands="".join(command_list))
 
         return command
-
 
     def get_commits(self, commit_name=""):
         """\
@@ -137,16 +139,17 @@ class RepoModifier(object):
                 "commit_sha": commit.hexsha
             }
 
-            print "\n", commit.hexsha[:6], commit.message.split("\n")[0]
+            print("\n", commit.hexsha[:6], commit.message.split("\n")[0])
             c = raw_input("Modify it? (y/n): ")
             if c.lower() not in ("y", "yes"):
                 continue
 
-            print "Commit time(\"%s\"):" % self.make_time_str(commit.authored_date),
+            print("Commit time(\"%s\"):" % self.make_time_str(
+                commit.authored_date), end=' ')
             commit_time = raw_input()
-            print "Commit author name (%s):" % commit.author.name,
+            print("Commit author name (%s):" % commit.author.name, end=' ')
             commit_name = raw_input()
-            print "Commit author email (%s):" % commit.author.email,
+            print("Commit author email (%s):" % commit.author.email, end=' ')
             commit_email = raw_input()
 
             if commit_time or commit_name or commit_email:
