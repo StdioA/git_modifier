@@ -22,7 +22,7 @@ def index():
 
 @app.route("/get_commits", methods=["POST"])
 def get_commits():
-    address = request.form["address"].encode("gbk")
+    address = request.form["address"]
     session["address"] = address
     try:
         repo = RepoModifier(address)
@@ -77,7 +77,7 @@ def run_command():
     command = session["command"]
     repo_path = session["address"]
 
-    with file("./modify_time.sh", "w") as f:
+    with open("./modify_time.sh", "w") as f:
         f.write(command)
     os.system("sh modify_time.sh")
     os.remove("./modify_time.sh")

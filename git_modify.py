@@ -1,9 +1,16 @@
 # coding: utf-8
 
 import os
+import sys
 import time
 import shutil
 import git
+
+
+py3k = sys.version_info.major > 2
+
+if not py3k:
+    input = raw_input
 
 
 class RepoModifier(object):
@@ -137,17 +144,17 @@ class RepoModifier(object):
                 "commit_sha": commit.hexsha
             }
 
-            print "\n", commit.hexsha[:6], commit.message.split("\n")[0]
-            c = raw_input("Modify it? (y/n): ")
+            print("\n", commit.hexsha[:6], commit.message.split("\n")[0])
+            c = input("Modify it? (y/n): ")
             if c.lower() not in ("y", "yes"):
                 continue
 
-            print "Commit time(\"%s\"):" % self.make_time_str(commit.authored_date),
-            commit_time = raw_input()
-            print "Commit author name (%s):" % commit.author.name,
-            commit_name = raw_input()
-            print "Commit author email (%s):" % commit.author.email,
-            commit_email = raw_input()
+            print("Commit time(\"%s\"):" % self.make_time_str(commit.authored_date))
+            commit_time = input()
+            print("Commit author name (%s):" % commit.author.name)
+            commit_name = input()
+            print("Commit author email (%s):" % commit.author.email)
+            commit_email = input()
 
             if commit_time or commit_name or commit_email:
                 if commit_time:
@@ -167,7 +174,7 @@ class RepoModifier(object):
 
                 self.command_list.append(time_command.format(**params))
 
-        self.command = edit_command.format(
+        self.command = self.edit_command.format(
                 path=self.repo_path.replace("\\", "\\\\"),
                 commands="".join(self.command_list))
 
@@ -179,7 +186,7 @@ class RepoModifier(object):
         """
 
         repo_path = self.repo_path
-        with file("./modify_time.sh", "w") as f:
+        with open("./modify_time.sh", "w") as f:
             f.write(self.command)
         os.system("sh modify_time.sh")
         os.remove("./modify_time.sh")
