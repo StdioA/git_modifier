@@ -15,7 +15,7 @@ if not py3k:
 
 class RepoModifier(object):
     edit_command = """\
-    cd {path}
+    cd "{path}"
     rm -rf "$(git rev-parse --git-dir)/refs/original/"
 
     git filter-branch --env-filter \\
