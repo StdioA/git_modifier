@@ -262,8 +262,12 @@ var CommitForm = React.createClass({
 });
 
 $("#modify").on("click", function () {
-	var addr = $("#addr").val();
-	$.post("/get_commits", { address: addr }, function (data, status) {
+	var addr = $("[name=addr]").val();
+	var rev = $("[name=rev]").val();
+	$.post("/get_commits", {
+		address: addr,
+		rev: rev
+	}, function (data, status) {
 		if (data.success) {
 			ReactDOM.render(React.createElement(CommitForm, { commits: data.commits }), document.getElementById("commits"));
 		} else {

@@ -1,16 +1,8 @@
 # coding: utf-8
 
 import os
-import sys
 import time
-import shutil
 import git
-
-
-py3k = sys.version_info.major > 2
-
-if not py3k:
-    input = raw_input
 
 
 class RepoModifier(object):
@@ -21,7 +13,7 @@ class RepoModifier(object):
     git filter-branch --env-filter \\
     \"
         {commands}
-    \"
+    \" {rev}
     """
 
     time_command = """
@@ -46,7 +38,7 @@ class RepoModifier(object):
             raise
 
     @staticmethod
-    def make_time_stamp(time_str, dash=False):
+    def make_timestamp(time_str, dash=False):
         """\
         getTime('2016/01/27 23:12:18') -> 1453907538
         """
@@ -54,35 +46,34 @@ class RepoModifier(object):
             time_array = time.strptime(time_str, "%Y-%m-%d %H:%M:%S")
         else:
             time_array = time.strptime(time_str, "%Y/%m/%d %H:%M:%S")
-        time_stamp = int(time.mktime(time_array))
-        return time_stamp
+        timestamp = int(time.mktime(time_array))
+        return timestamp
 
     @staticmethod
-    def make_time_str(time_stamp):
+    def make_time_str(timestamp):
         """\
         getTime(1453907538) -> '2016/01/27 23:12:18'
         """
-        time_array = time.localtime(time_stamp)
+        time_array = time.localtime(timestamp)
         time_str = time.strftime("%Y/%m/%d %H:%M:%S", time_array)
         return time_str
 
     @classmethod
-    def generate_command(cls, repo_path, old_commits, new_commits):
-
+    def generate_command(cls, repo_path, rev, old_commits, new_commits):
         command_list = []
         for index, old_commit in enumerate(old_commits):
             params = {
-                    "commit_sha": old_commit["sha"]
-                }
-            
+                "commit_sha": old_commit["sha"]
+            }
+
             new_commit = new_commits[index]
 
             old_commit["commit_time_str"] = " ".join([old_commit["date"], old_commit["time"]])
             new_commit["commit_time_str"] = " ".join([new_commit["date"], new_commit["time"]])
-            old_commit["commit_time"] = cls.make_time_stamp(old_commit["commit_time_str"],
-                                                            dash=True)
-            new_commit["commit_time"] = cls.make_time_stamp(new_commit["commit_time_str"],
-                                                            dash=True)
+            old_commit["commit_time"] = cls.make_timestamp(old_commit["commit_time_str"],
+                                                           dash=True)
+            new_commit["commit_time"] = cls.make_timestamp(new_commit["commit_time_str"],
+                                                           dash=True)
 
             commit_time = (old_commit["commit_time"] != new_commit["commit_time"])
             commit_name = (old_commit["author"] != new_commit["author"])
@@ -90,17 +81,17 @@ class RepoModifier(object):
 
             if commit_time or commit_name or commit_email:
                 if commit_time:
-                    params["commit_time"] = "'%s'"%new_commit["commit_time"]
+                    params["commit_time"] = "'{}'".format(new_commit["commit_time"])
                 else:
                     params["commit_time"] = "\"\\$GIT_COMMITTER_DATE\""
 
                 if commit_name:
-                    params["commit_name"] = "'%s'"%new_commit["author"]
+                    params["commit_name"] = "'{}'".format(new_commit["author"])
                 else:
                     params["commit_name"] = "\"\\$GIT_AUTHOR_NAME\""
 
                 if commit_email:
-                    params["commit_email"] = "'%s'"%new_commit["email"]
+                    params["commit_email"] = "'{}'".format(new_commit["email"])
                 else:
                     params["commit_email"] = "\"\\$GIT_AUTHOR_EMAIL\""
 
@@ -108,12 +99,12 @@ class RepoModifier(object):
 
         command = cls.edit_command.format(
                 path=repo_path.replace("\\", "\\\\"),
-                commands="".join(command_list))
+                commands="".join(command_list),
+                rev=rev)
 
         return command
 
-
-    def get_commits(self, commit_name=""):
+    def get_commits(self, rev=""):
         """\
         Getting all the commits behind the given commit
         """
@@ -121,17 +112,7 @@ class RepoModifier(object):
         if not self.repo:
             raise git.InvalidGitRepositoryError
 
-        if not commit_name:
-            commit = self.repo.commit("master")
-        else:
-            commit = self.repo.commit(commit_name)
-        
-        while True:
-            yield commit
-            if commit.parents:
-                commit = commit.parents[0]
-            else:
-                break
+        yield from self.repo.iter_commits(rev)
 
     def console_modify(self):
         """\
@@ -158,21 +139,21 @@ class RepoModifier(object):
 
             if commit_time or commit_name or commit_email:
                 if commit_time:
-                    params["commit_time"] = "'%s'"%commit_time
+                    params["commit_time"] = "'{}'".format(commit_time)
                 else:
                     params["commit_time"] = "\"\\$GIT_COMMITTER_DATE\""
 
                 if commit_name:
-                    params["commit_name"] = "'%s'"%commit_name
+                    params["commit_name"] = "'{}'".format(commit_name)
                 else:
                     params["commit_name"] = "\"\\$GIT_AUTHOR_NAME\""
 
                 if commit_email:
-                    params["commit_email"] = "'%s'"%commit_email
+                    params["commit_email"] = "'{}'".format(commit_email)
                 else:
                     params["commit_email"] = "\"\\$GIT_AUTHOR_EMAIL\""
 
-                self.command_list.append(time_command.format(**params))
+                self.command_list.append(self.time_command.format(**params))
 
         self.command = self.edit_command.format(
                 path=self.repo_path.replace("\\", "\\\\"),
@@ -184,8 +165,6 @@ class RepoModifier(object):
         """\
         Run the shell script.
         """
-
-        repo_path = self.repo_path
         with open("./modify_time.sh", "w") as f:
             f.write(self.command)
         os.system("sh modify_time.sh")
