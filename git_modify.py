@@ -61,12 +61,10 @@ class RepoModifier(object):
     @classmethod
     def generate_command(cls, repo_path, rev, old_commits, new_commits):
         command_list = []
-        for index, old_commit in enumerate(old_commits):
+        for old_commit, new_commit in zip(old_commits, new_commits):
             params = {
                 "commit_sha": old_commit["sha"]
             }
-
-            new_commit = new_commits[index]
 
             old_commit["commit_time_str"] = " ".join([old_commit["date"], old_commit["time"]])
             new_commit["commit_time_str"] = " ".join([new_commit["date"], new_commit["time"]])
@@ -79,22 +77,22 @@ class RepoModifier(object):
             commit_name = (old_commit["author"] != new_commit["author"])
             commit_email = (old_commit["email"] != new_commit["email"])
 
-            if commit_time or commit_name or commit_email:
-                if commit_time:
-                    params["commit_time"] = "'{}'".format(new_commit["commit_time"])
-                else:
-                    params["commit_time"] = "\"\\$GIT_COMMITTER_DATE\""
+            if commit_time:
+                params["commit_time"] = "'{}'".format(new_commit["commit_time"])
+            else:
+                params["commit_time"] = "\"\\$GIT_COMMITTER_DATE\""
 
-                if commit_name:
-                    params["commit_name"] = "'{}'".format(new_commit["author"])
-                else:
-                    params["commit_name"] = "\"\\$GIT_AUTHOR_NAME\""
+            if commit_name:
+                params["commit_name"] = "'{}'".format(new_commit["author"])
+            else:
+                params["commit_name"] = "\"\\$GIT_AUTHOR_NAME\""
 
-                if commit_email:
-                    params["commit_email"] = "'{}'".format(new_commit["email"])
-                else:
-                    params["commit_email"] = "\"\\$GIT_AUTHOR_EMAIL\""
+            if commit_email:
+                params["commit_email"] = "'{}'".format(new_commit["email"])
+            else:
+                params["commit_email"] = "\"\\$GIT_AUTHOR_EMAIL\""
 
+            if any([commit_time, commit_name, commit_email]):
                 command_list.append(cls.time_command.format(**params))
 
         command = cls.edit_command.format(
@@ -104,7 +102,7 @@ class RepoModifier(object):
 
         return command
 
-    def get_commits(self, rev=""):
+    def get_commits(self, rev="master"):
         """\
         Getting all the commits behind the given commit
         """
